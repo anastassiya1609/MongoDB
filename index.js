@@ -1,70 +1,30 @@
 import express from "express";
-import { MongoClient, ObjectId } from "mongodb";
+import mongoose from "mongoose";
+import teacherRoutes from "./routes/teacher.routes.js";
+import courseRoutes from "./routes/course.routes.js";
+import studentRoutes from "./routes/student.routes.js";
 
 const app = express();
+const PORT = 3000;
 
-const PORT = 8000;
-const connectionString = "mongodb://127.0.0.1:27017";
-const client = new MongoClient(connectionString);
+const connectionString =
+  "mongodb+srv://mongouser:lmkZYlCuRMIl60lC@cluster0.6zphv.mongodb.net/test-lesson?retryWrites=true&w=majority&appName=Cluster0";
 
-app.use(express.json());
-let db;
-
-async function connectDB() {
+async function connectDatabase() {
   try {
-    await client.connect();
-    db = client.db("lesson");
-    console.log("БД подключена успешно");
+    await mongoose.connect(connectionString);
+    console.log("Подключено к базе данных!");
   } catch (error) {
-    console.log("Не удалось поодключиться к БД");
+    console.log("Error!");
   }
 }
 
-app.get("/", (req, res) => {
-  res.send("Hello");
-});
-
-app.get("/employees", async (req, res) => {
-  try {
-    const collection = db.collection("users");
-    const users = await collection.find().toArray();
-    res.json(users);
-  } catch (error) {
-    console.log("Не удалось подключиться к базе данных!");
-  }
-});
-
-app.get("/employees/:id", async (req, res) => {
-  try {
-    const { id } = req.params;
-    const collection = db.collection("users");
-    const users = await collection.findOne({
-      _id: new ObjectId(id),
-    });
-    res.json(users);
-  } catch (error) {
-    console.log("Не удалось подключиться к базе данных!");
-  }
-});
-
-app.post("/employees", async (req, res) => {
-  try {
-    const { name, city, age } = req.body;
-
-    if (!name || !city || !age) {
-      return res.status(400).json({ error: "Заполните все поля!" });
-    }
-
-    const collection = db.collection("users");
-
-    const user = await collection.insertOne({ name, city, age });
-    res.json({ message: "Новый работник успешно создан", user });
-  } catch (error) {
-    console.log("Не удалось подключиться к базе данных!");
-  }
-});
+app.use(express.json());
+app.use("/teacher", teacherRoutes);
+app.use("/course", courseRoutes);
+app.use("/student", studentRoutes);
 
 app.listen(PORT, async () => {
-  await connectDB();
+  await connectDatabase();
   console.log(`Сервер запущен на http://localhost:${PORT}`);
 });
